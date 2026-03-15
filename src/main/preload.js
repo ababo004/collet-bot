@@ -106,4 +106,7 @@ contextBridge.exposeInMainWorld('collet', {
 
   // App version
   getVersion: () => ipcRenderer.invoke('app:get-version'),
+
+  // Platform info (safe subset, no Node access needed)
+  platform: process.platform,
 })

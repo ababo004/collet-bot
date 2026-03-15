@@ -1,5 +1,11 @@
 const api = window.collet
 
+// Hide the macOS traffic-light spacer on Windows/Linux
+if (api.platform !== 'darwin') {
+  const el = document.getElementById('sidebar-traffic')
+  if (el) el.style.display = 'none'
+}
+
 let view     = 'invoices'
 let invoices = []
 let logs     = []
