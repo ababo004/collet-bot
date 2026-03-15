@@ -29,12 +29,14 @@ jobs:
 
       - name: Build macOS (x64 + arm64)
         env:
-          GH_TOKEN:                   ${{ secrets.GITHUB_TOKEN }}
-          APPLE_ID:                   ${{ secrets.APPLE_ID }}
+          GH_TOKEN:                    ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID:                    ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID:              ${{ secrets.APPLE_TEAM_ID }}
-          CSC_LINK:                   ${{ secrets.MAC_CERT_P12_BASE64 }}
-          CSC_KEY_PASSWORD:           ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_TEAM_ID:               ${{ secrets.APPLE_TEAM_ID }}
+          # Skip code signing if certificate secret is not configured
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_P12_BASE64 != '' && 'true' || 'false' }}
+          CSC_LINK:                    ${{ secrets.MAC_CERT_P12_BASE64 }}
+          CSC_KEY_PASSWORD:            ${{ secrets.MAC_CERT_PASSWORD }}
         run: npx electron-builder --mac --publish always
 
   # ── Windows build ─────────────────────────────────────────────────────────
