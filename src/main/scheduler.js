@@ -48,7 +48,7 @@ async function runScan(scanFn) {
 
 function stopScheduler() {
   if (scanTask) {
-    scanTask.destroy()
+    scanTask.stop()
     scanTask = null
     log.info('Scheduler stopped')
   }

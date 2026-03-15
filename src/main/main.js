@@ -18,14 +18,13 @@ process.on('unhandledRejection', (reason) => {
 
 app.setName('Collet')
 
-if (process.platform === 'darwin') {
-  app.dock.hide()
-}
+// Keep dock icon visible so users can click to re-open dashboard
 
 let tray = null
 let setupWindow = null
 let logWindow = null
 let settingsWindow = null
+let dashboardWindow = null
 let isSetupComplete = false
 
 function isSetupDone() {
@@ -64,6 +63,32 @@ function openSetupWizard() {
       app.quit()
     }
   })
+}
+
+function openDashboard() {
+  if (dashboardWindow) {
+    dashboardWindow.focus()
+    return
+  }
+
+  dashboardWindow = new BrowserWindow({
+    width: 1100,
+    height: 680,
+    minWidth: 800,
+    minHeight: 500,
+    title: 'Collet',
+    backgroundColor: '#ffffff',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false
+    }
+  })
+
+  dashboardWindow.loadFile(path.join(__dirname, '../dashboard/dashboard.html'))
+  dashboardWindow.on('closed', () => { dashboardWindow = null })
 }
 
 function openLogWindow() {
@@ -138,6 +163,9 @@ async function startBot() {
   startScheduler(scan)
 
   log.info('Collet bot started')
+
+  // Open dashboard so user can see the bot working
+  openDashboard()
 
   setTimeout(() => scan(), 3000)
 }
@@ -256,6 +284,31 @@ ipcMain.handle('setup:complete', async () => {
   if (setupWindow) setupWindow.close()
   startBot()
   return { ok: true }
+})
+
+ipcMain.handle('dashboard:get-data', async () => {
+  const { getDb, getSequenceLogs, getStats, getSetting } = require('./db')
+  const invoices = getDb().prepare('SELECT * FROM invoices ORDER BY due_date ASC').all()
+  return {
+    invoices,
+    logs:  getSequenceLogs(200),
+    stats: getStats(),
+    settings: {
+      email_provider:    getSetting('email_provider'),
+      email_address:     getSetting('email_address'),
+      accounting_source: getSetting('accounting_source'),
+      crm_source:        getSetting('crm_source'),
+      scan_frequency:    getSetting('scan_frequency'),
+      sender_name:       getSetting('sender_name'),
+      pay_link:          getSetting('pay_link'),
+    }
+  }
+})
+
+ipcMain.handle('dashboard:scan-now', async () => {
+  const { scan } = require('./scanner')
+  const { triggerManualScan } = require('./scheduler')
+  return triggerManualScan(scan)
 })
 
 ipcMain.handle('log:get-entries', async (_, limit) => {
