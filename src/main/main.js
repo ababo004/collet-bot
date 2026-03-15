@@ -18,6 +18,33 @@ process.on('unhandledRejection', (reason) => {
 
 app.setName('Collet')
 
+// ── Bootstrap stored credentials into process.env on startup ────────────────
+// Credentials are saved to keychain via setup:save-credentials IPC.
+// We reload them here so integration files using process.env work after restart.
+;(async () => {
+  const keytar = require('./keytar-safe')
+  const CRED_KEYS = [
+    'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET',
+    'OUTLOOK_CLIENT_ID', 'OUTLOOK_CLIENT_SECRET', 'OUTLOOK_TENANT_ID',
+    'QB_CLIENT_ID', 'QB_CLIENT_SECRET',
+    'XERO_CLIENT_ID', 'XERO_CLIENT_SECRET',
+    'FRESHBOOKS_CLIENT_ID', 'FRESHBOOKS_CLIENT_SECRET',
+    'WAVE_API_KEY',
+    'HUBSPOT_CLIENT_ID', 'HUBSPOT_CLIENT_SECRET',
+    'SALESFORCE_CLIENT_ID', 'SALESFORCE_CLIENT_SECRET',
+    'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET',
+    'STRIPE_SECRET_KEY',
+    'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET',
+  ]
+  for (const key of CRED_KEYS) {
+    if (!process.env[key]) {
+      const stored = await keytar.getPassword('com.collet.app', `cred_${key}`)
+      if (stored) process.env[key] = stored
+    }
+  }
+  log.info('Credentials bootstrapped from keychain')
+})()
+
 // Keep dock icon visible so users can click to re-open dashboard
 
 let tray = null
@@ -221,6 +248,18 @@ ipcMain.handle('setup:get-setting', async (_, key) => {
 ipcMain.handle('setup:store-credential', async (_, account, password) => {
   const keytar = require('./keytar-safe')
   await keytar.setPassword('com.collet.app', account, password)
+  return { ok: true }
+})
+
+// Save a map of { ENV_VAR_KEY: value } to keychain AND process.env so integrations pick them up immediately
+ipcMain.handle('setup:save-credentials', async (_, creds) => {
+  const keytar = require('./keytar-safe')
+  for (const [key, value] of Object.entries(creds || {})) {
+    if (!value) continue
+    await keytar.setPassword('com.collet.app', `cred_${key}`, value)
+    process.env[key] = value   // also set in current process so integrations using process.env work instantly
+  }
+  log.info(`Saved credentials: ${Object.keys(creds || {}).join(', ')}`)
   return { ok: true }
 })
 

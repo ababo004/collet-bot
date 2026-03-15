@@ -1,6 +1,7 @@
 const { google } = require('googleapis')
 const { BrowserWindow, shell } = require('electron')
 const keytar = require('../main/keytar-safe')
+const { getCred } = require('../main/credentials')
 const http = require('http')
 const url = require('url')
 const log = require('electron-log')
@@ -15,17 +16,19 @@ const SCOPES = [
 const REDIRECT_PORT = 8765
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/oauth/gmail`
 
-function createOAuthClient() {
-  return new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI
-  )
+async function createOAuthClient() {
+  const clientId     = await getCred('GOOGLE_CLIENT_ID')
+  const clientSecret = await getCred('GOOGLE_CLIENT_SECRET')
+  if (!clientId || !clientSecret) throw new Error('Google credentials not configured. Click Connect to enter your Client ID and Secret.')
+  return new google.auth.OAuth2(clientId, clientSecret, REDIRECT_URI)
 }
 
 async function startGmailOAuth() {
-  return new Promise((resolve) => {
-    const oauth2Client = createOAuthClient()
+  return new Promise(async (resolve) => {
+    let oauth2Client
+    try { oauth2Client = await createOAuthClient() }
+    catch (err) { return resolve({ ok: false, error: err.message }) }
+
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
@@ -90,7 +93,7 @@ async function getAuthenticatedClient() {
 
   if (!accessToken && !refreshToken) throw new Error('Gmail not authenticated')
 
-  const oauth2Client = createOAuthClient()
+  const oauth2Client = await createOAuthClient()
   oauth2Client.setCredentials({ access_token: accessToken, refresh_token: refreshToken })
 
   oauth2Client.on('tokens', async (tokens) => {

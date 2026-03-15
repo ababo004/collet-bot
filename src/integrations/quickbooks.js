@@ -1,5 +1,6 @@
 const { shell } = require('electron')
 const keytar = require('../main/keytar-safe')
+const { getCred } = require('../main/credentials')
 const http = require('http')
 const url = require('url')
 const axios = require('axios')
@@ -15,9 +16,11 @@ const QB_API_BASE = 'https://quickbooks.api.intuit.com/v3/company'
 
 const SCOPES = 'com.intuit.quickbooks.accounting'
 
-function buildAuthUrl() {
+async function buildAuthUrl() {
+  const clientId = await getCred('QB_CLIENT_ID')
+  if (!clientId) throw new Error('QuickBooks credentials not configured. Click Connect to enter your Client ID and Secret.')
   const params = new URLSearchParams({
-    client_id: process.env.QB_CLIENT_ID || '',
+    client_id: clientId,
     response_type: 'code',
     scope: SCOPES,
     redirect_uri: REDIRECT_URI,
@@ -27,8 +30,10 @@ function buildAuthUrl() {
 }
 
 async function startQuickBooksOAuth() {
-  return new Promise((resolve) => {
-    const authUrl = buildAuthUrl()
+  return new Promise(async (resolve) => {
+    let authUrl
+    try { authUrl = await buildAuthUrl() }
+    catch (err) { return resolve({ ok: false, error: err.message }) }
 
     let server = http.createServer(async (req, res) => {
       const parsedUrl = url.parse(req.url, true)
@@ -48,9 +53,9 @@ async function startQuickBooksOAuth() {
       }
 
       try {
-        const credentials = Buffer.from(
-          `${process.env.QB_CLIENT_ID}:${process.env.QB_CLIENT_SECRET}`
-        ).toString('base64')
+        const clientId     = await getCred('QB_CLIENT_ID')
+        const clientSecret = await getCred('QB_CLIENT_SECRET')
+        const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
 
         const tokenRes = await axios.post(QB_TOKEN_URL, new URLSearchParams({
           code,
@@ -111,9 +116,9 @@ async function getAccessToken() {
     return accessToken
   } catch (err) {
     if (err.response?.status === 401 && refreshToken) {
-      const credentials = Buffer.from(
-        `${process.env.QB_CLIENT_ID}:${process.env.QB_CLIENT_SECRET}`
-      ).toString('base64')
+      const clientId     = await getCred('QB_CLIENT_ID')
+      const clientSecret = await getCred('QB_CLIENT_SECRET')
+      const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
 
       const tokenRes = await axios.post(QB_TOKEN_URL, new URLSearchParams({
         refresh_token: refreshToken,

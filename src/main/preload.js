@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('collet', {
       ipcRenderer.invoke('setup:get-setting', key),
     storeCredential: (account, password) =>
       ipcRenderer.invoke('setup:store-credential', account, password),
+    saveCredentials: (creds) =>
+      ipcRenderer.invoke('setup:save-credentials', creds),
     oauthGmail: () =>
       ipcRenderer.invoke('setup:oauth-gmail'),
     oauthOutlook: () =>

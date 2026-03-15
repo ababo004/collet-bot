@@ -1,5 +1,6 @@
 const { shell } = require('electron')
 const keytar = require('../main/keytar-safe')
+const { getCred } = require('../main/credentials')
 const http = require('http')
 const url = require('url')
 const axios = require('axios')
@@ -8,26 +9,28 @@ const log = require('electron-log')
 const SERVICE_NAME = 'com.collet.app'
 const REDIRECT_PORT = 8766
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/oauth/outlook`
-const TENANT = 'common'
 const SCOPES = 'offline_access Mail.ReadWrite Mail.Send User.Read'
 
-const AUTH_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/authorize`
-const TOKEN_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`
-
-function buildAuthUrl() {
+async function buildAuthUrl() {
+  const clientId = await getCred('OUTLOOK_CLIENT_ID')
+  const tenant   = await getCred('OUTLOOK_TENANT_ID') || 'common'
+  if (!clientId) throw new Error('Outlook credentials not configured. Click Connect to enter your Azure App credentials.')
   const params = new URLSearchParams({
-    client_id: process.env.MICROSOFT_CLIENT_ID || '',
+    client_id: clientId,
     response_type: 'code',
     redirect_uri: REDIRECT_URI,
     scope: SCOPES,
     prompt: 'select_account'
   })
-  return `${AUTH_URL}?${params.toString()}`
+  const AUTH_URL = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`
+  return AUTH_URL + '?' + params.toString()
 }
 
 async function startOutlookOAuth() {
-  return new Promise((resolve) => {
-    const authUrl = buildAuthUrl()
+  return new Promise(async (resolve) => {
+    let authUrl
+    try { authUrl = await buildAuthUrl() }
+    catch (err) { return resolve({ ok: false, error: err.message }) }
 
     let server = http.createServer(async (req, res) => {
       const parsedUrl = url.parse(req.url, true)
@@ -46,12 +49,17 @@ async function startOutlookOAuth() {
       }
 
       try {
+        const clientId     = await getCred('OUTLOOK_CLIENT_ID')
+        const clientSecret = await getCred('OUTLOOK_CLIENT_SECRET')
+        const tenant       = await getCred('OUTLOOK_TENANT_ID') || 'common'
+        const TOKEN_URL    = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`
+
         const tokenRes = await axios.post(TOKEN_URL, new URLSearchParams({
-          client_id: process.env.MICROSOFT_CLIENT_ID || '',
-          client_secret: process.env.MICROSOFT_CLIENT_SECRET || '',
+          client_id:     clientId,
+          client_secret: clientSecret,
           code,
-          redirect_uri: REDIRECT_URI,
-          grant_type: 'authorization_code'
+          redirect_uri:  REDIRECT_URI,
+          grant_type:    'authorization_code'
         }), {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         })

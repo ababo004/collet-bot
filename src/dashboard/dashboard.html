@@ -585,6 +585,69 @@
     }
 
     .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Credentials modal ──────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 460px;
+      max-width: calc(100vw - 40px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 22px 24px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .modal-sub   { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 14px; color: var(--muted); padding: 2px 6px;
+      border-radius: 4px; line-height: 1;
+    }
+    .modal-close:hover { background: var(--surface-2); color: var(--text); }
+    .modal-body  { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+    .modal-field { display: flex; flex-direction: column; gap: 5px; }
+    .modal-label {
+      font-size: 11px; font-weight: 500; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .modal-input {
+      font-family: var(--mono); font-size: 12px;
+      padding: 9px 12px;
+      border: 1px solid var(--border-str);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .modal-input:focus { border-color: var(--accent); background: var(--bg); }
+    .modal-hint {
+      font-size: 11px; color: var(--muted);
+      line-height: 1.5;
+    }
+    .modal-hint a { color: var(--accent); text-decoration: none; }
+    .modal-hint a:hover { text-decoration: underline; }
+
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
   </style>
 </head>
 <body>
@@ -651,6 +714,25 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ── Credentials Modal ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="cred-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Connect</div>
+        <div class="modal-sub"  id="modal-sub">Enter your credentials to connect</div>
+      </div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-fields"></div>
+    <div class="modal-footer">
+      <button class="btn" id="modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="modal-connect">Save &amp; Connect →</button>
+    </div>
+  </div>
+</div>
+
 <script src="dashboard.js"></script>
 </body>
 </html>

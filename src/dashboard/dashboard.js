@@ -394,47 +394,277 @@ function bindTemplates() {
 // ── Connections ───────────────────────────────────────────────────────────────
 
 // ── Connection catalogue ───────────────────────────────────────────────────
-// type: 'oauth'       → launches OAuth browser flow
-// type: 'apikey'      → shows inline API key input before connecting
-// settingKey          → which settings key determines "connected" state
+// credFields: shown in the modal before launching OAuth / API connect
+//   { key, label, type, placeholder, hint, hintLink }
+// settingKey: which settings value determines "connected" state
 
 const CONNECTIONS = [
   {
     group: 'Email',
     items: [
-      { id: 'gmail',       name: 'Gmail',             icon: 'G',   desc: 'Send & detect payments via Gmail',       type: 'oauth',  settingKey: 'email_provider',    oauthFn: () => api.setup.oauthGmail() },
-      { id: 'outlook',     name: 'Outlook / M365',    icon: 'M',   desc: 'Send & detect payments via Outlook',     type: 'oauth',  settingKey: 'email_provider',    oauthFn: () => api.setup.oauthOutlook() },
+      {
+        id: 'gmail', name: 'Gmail', icon: 'G',
+        desc: 'Send follow-ups & detect payments via Gmail',
+        settingKey: 'email_provider',
+        oauthFn: () => api.setup.oauthGmail(),
+        credFields: [
+          { key: 'GOOGLE_CLIENT_ID',     label: 'Google Client ID',     type: 'text',     placeholder: '123456789.apps.googleusercontent.com' },
+          { key: 'GOOGLE_CLIENT_SECRET', label: 'Google Client Secret', type: 'password', placeholder: 'GOCSPX-…' },
+        ],
+        hint: 'Create OAuth 2.0 credentials in the',
+        hintLink: { text: 'Google Cloud Console', url: 'https://console.cloud.google.com/apis/credentials' },
+      },
+      {
+        id: 'outlook', name: 'Outlook / M365', icon: 'M',
+        desc: 'Send follow-ups & detect payments via Outlook',
+        settingKey: 'email_provider',
+        oauthFn: () => api.setup.oauthOutlook(),
+        credFields: [
+          { key: 'OUTLOOK_CLIENT_ID',     label: 'Azure App (Client) ID',     type: 'text',     placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
+          { key: 'OUTLOOK_CLIENT_SECRET', label: 'Azure Client Secret Value', type: 'password', placeholder: '~xxxxxx…' },
+          { key: 'OUTLOOK_TENANT_ID',     label: 'Directory (Tenant) ID',     type: 'text',     placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx or "common"' },
+        ],
+        hint: 'Register an app in the',
+        hintLink: { text: 'Azure Portal', url: 'https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade' },
+      },
     ]
   },
   {
     group: 'Accounting',
     items: [
-      { id: 'quickbooks',  name: 'QuickBooks Online', icon: 'QB',  desc: 'Sync unpaid invoices automatically',     type: 'oauth',  settingKey: 'accounting_source', oauthFn: () => api.setup.oauthQuickBooks() },
-      { id: 'xero',        name: 'Xero',              icon: 'X',   desc: 'Sync unpaid invoices automatically',     type: 'oauth',  settingKey: 'accounting_source', oauthFn: () => api.setup.oauthXero() },
-      { id: 'freshbooks',  name: 'FreshBooks',        icon: 'FB',  desc: 'Sync outstanding invoices from FreshBooks', type: 'oauth', settingKey: 'accounting_source', oauthFn: () => api.setup.oauthFreshBooks() },
-      { id: 'wave',        name: 'Wave',              icon: 'W',   desc: 'Sync invoices via Wave API key',         type: 'apikey', settingKey: 'accounting_source', placeholder: 'Wave API key…', connectFn: (k) => api.setup.connectWave(k) },
+      {
+        id: 'quickbooks', name: 'QuickBooks Online', icon: 'QB',
+        desc: 'Sync unpaid invoices automatically',
+        settingKey: 'accounting_source',
+        oauthFn: () => api.setup.oauthQuickBooks(),
+        credFields: [
+          { key: 'QB_CLIENT_ID',     label: 'QuickBooks Client ID',     type: 'text',     placeholder: 'ABxxxxxx…' },
+          { key: 'QB_CLIENT_SECRET', label: 'QuickBooks Client Secret', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Create an app on the',
+        hintLink: { text: 'Intuit Developer Portal', url: 'https://developer.intuit.com/app/developer/myapps' },
+      },
+      {
+        id: 'xero', name: 'Xero', icon: 'X',
+        desc: 'Sync unpaid invoices from Xero',
+        settingKey: 'accounting_source',
+        oauthFn: () => api.setup.oauthXero(),
+        credFields: [
+          { key: 'XERO_CLIENT_ID',     label: 'Xero Client ID',     type: 'text',     placeholder: 'xxxxxxxx-xxxx-…' },
+          { key: 'XERO_CLIENT_SECRET', label: 'Xero Client Secret', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Register an app in the',
+        hintLink: { text: 'Xero Developer Portal', url: 'https://developer.xero.com/app/manage' },
+      },
+      {
+        id: 'freshbooks', name: 'FreshBooks', icon: 'FB',
+        desc: 'Sync outstanding invoices from FreshBooks',
+        settingKey: 'accounting_source',
+        oauthFn: () => api.setup.oauthFreshBooks(),
+        credFields: [
+          { key: 'FRESHBOOKS_CLIENT_ID',     label: 'FreshBooks Client ID',     type: 'text',     placeholder: 'xxxxxxxxxx…' },
+          { key: 'FRESHBOOKS_CLIENT_SECRET', label: 'FreshBooks Client Secret', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Create an app in the',
+        hintLink: { text: 'FreshBooks Developer Portal', url: 'https://my.freshbooks.com/#/developer' },
+      },
+      {
+        id: 'wave', name: 'Wave', icon: 'W',
+        desc: 'Sync invoices via Wave API',
+        settingKey: 'accounting_source',
+        connectFn: (creds) => api.setup.connectWave(creds['WAVE_API_KEY']),
+        credFields: [
+          { key: 'WAVE_API_KEY', label: 'Wave Full Access Token', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Generate a token in',
+        hintLink: { text: 'Wave Developer Settings', url: 'https://developer.waveapps.com/hc/en-us/articles/360019968212' },
+      },
     ]
   },
   {
     group: 'CRM',
     items: [
-      { id: 'hubspot',     name: 'HubSpot CRM',       icon: 'HS',  desc: 'Log activity & update contact status',   type: 'oauth',  settingKey: 'crm_source',        oauthFn: () => api.setup.oauthHubSpot() },
-      { id: 'salesforce',  name: 'Salesforce',        icon: 'SF',  desc: 'Log tasks & close Opportunities on payment', type: 'oauth', settingKey: 'crm_source',    oauthFn: () => api.setup.oauthSalesforce() },
-      { id: 'zoho',        name: 'Zoho CRM',          icon: 'ZH',  desc: 'Log notes & close Deals on payment',     type: 'oauth',  settingKey: 'crm_source',        oauthFn: () => api.setup.oauthZoho() },
+      {
+        id: 'hubspot', name: 'HubSpot CRM', icon: 'HS',
+        desc: 'Log activity & sync contact status',
+        settingKey: 'crm_source',
+        oauthFn: () => api.setup.oauthHubSpot(),
+        credFields: [
+          { key: 'HUBSPOT_CLIENT_ID',     label: 'HubSpot App Client ID',     type: 'text',     placeholder: 'xxxxxxxx-xxxx-…' },
+          { key: 'HUBSPOT_CLIENT_SECRET', label: 'HubSpot App Client Secret', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Create a private app in',
+        hintLink: { text: 'HubSpot Settings → Integrations', url: 'https://app.hubspot.com/developer-docs/api' },
+      },
+      {
+        id: 'salesforce', name: 'Salesforce', icon: 'SF',
+        desc: 'Log Tasks & close Opportunities on payment',
+        settingKey: 'crm_source',
+        oauthFn: () => api.setup.oauthSalesforce(),
+        credFields: [
+          { key: 'SALESFORCE_CLIENT_ID',     label: 'Salesforce Consumer Key',    type: 'text',     placeholder: '3MVG9…' },
+          { key: 'SALESFORCE_CLIENT_SECRET', label: 'Salesforce Consumer Secret', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Create a Connected App in',
+        hintLink: { text: 'Salesforce Setup → App Manager', url: 'https://login.salesforce.com' },
+      },
+      {
+        id: 'zoho', name: 'Zoho CRM', icon: 'ZH',
+        desc: 'Log Notes & close Deals on payment',
+        settingKey: 'crm_source',
+        oauthFn: () => api.setup.oauthZoho(),
+        credFields: [
+          { key: 'ZOHO_CLIENT_ID',     label: 'Zoho Client ID',     type: 'text',     placeholder: '1000.xxxxxxxxxx…' },
+          { key: 'ZOHO_CLIENT_SECRET', label: 'Zoho Client Secret', type: 'password', placeholder: 'xxxxxxxxxx…' },
+        ],
+        hint: 'Register an app in the',
+        hintLink: { text: 'Zoho API Console', url: 'https://api-console.zoho.com/' },
+      },
     ]
   },
   {
     group: 'Payment Detection',
     items: [
-      { id: 'stripe',      name: 'Stripe',            icon: 'S',   desc: 'Auto-mark invoices paid via Stripe',     type: 'apikey', settingKey: 'payment_source',    placeholder: 'sk_live_… or sk_test_…', connectFn: (k) => api.setup.connectStripe(k) },
-      { id: 'paypal',      name: 'PayPal',            icon: 'PP',  desc: 'Auto-mark invoices paid via PayPal',     type: 'oauth',  settingKey: 'payment_source',    oauthFn: () => api.setup.oauthPayPal() },
+      {
+        id: 'stripe', name: 'Stripe', icon: 'S',
+        desc: 'Auto-mark invoices paid via Stripe charges',
+        settingKey: 'payment_source',
+        connectFn: (creds) => api.setup.connectStripe(creds['STRIPE_SECRET_KEY']),
+        credFields: [
+          { key: 'STRIPE_SECRET_KEY', label: 'Stripe Secret Key', type: 'password', placeholder: 'sk_live_… or sk_test_…' },
+        ],
+        hint: 'Find your keys in',
+        hintLink: { text: 'Stripe Dashboard → Developers', url: 'https://dashboard.stripe.com/apikeys' },
+      },
+      {
+        id: 'paypal', name: 'PayPal', icon: 'PP',
+        desc: 'Auto-mark invoices paid via PayPal transactions',
+        settingKey: 'payment_source',
+        oauthFn: () => api.setup.oauthPayPal(),
+        credFields: [
+          { key: 'PAYPAL_CLIENT_ID',     label: 'PayPal App Client ID',     type: 'text',     placeholder: 'AxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA' },
+          { key: 'PAYPAL_CLIENT_SECRET', label: 'PayPal App Secret',        type: 'password', placeholder: 'ExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxE' },
+        ],
+        hint: 'Create an app in',
+        hintLink: { text: 'PayPal Developer Dashboard', url: 'https://developer.paypal.com/dashboard/applications' },
+      },
     ]
   },
 ]
 
+// ── Modal state ──────────────────────────────────────────────────────────────
+
+let modalItem    = null
+let modalResolve = null
+
+function openCredModal(item) {
+  modalItem = item
+  document.getElementById('modal-title').textContent = `Connect ${item.name}`
+  document.getElementById('modal-sub').textContent   = item.desc
+
+  const fieldsHtml = item.credFields.map(f => `
+    <div class="modal-field">
+      <label class="modal-label">${f.label}</label>
+      <input class="modal-input"
+        id="mf-${f.key}"
+        type="${f.type || 'text'}"
+        placeholder="${f.placeholder || ''}"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+  `).join('')
+
+  const hintHtml = item.hint ? `
+    <div class="modal-hint">
+      ${item.hint} <a href="#" data-href="${item.hintLink.url}">${item.hintLink.text}</a>.
+    </div>` : ''
+
+  document.getElementById('modal-fields').innerHTML = fieldsHtml + hintHtml
+
+  // Wire hint links to open externally
+  document.querySelectorAll('#modal-fields a[data-href]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault()
+      api.openExternal(a.dataset.href)
+    })
+  })
+
+  document.getElementById('cred-modal').style.display = 'flex'
+
+  // Focus first input
+  const first = document.querySelector('#modal-fields .modal-input')
+  if (first) setTimeout(() => first.focus(), 50)
+}
+
+function closeCredModal() {
+  document.getElementById('cred-modal').style.display = 'none'
+  modalItem    = null
+  modalResolve = null
+}
+
+document.getElementById('modal-close').addEventListener('click',  closeCredModal)
+document.getElementById('modal-cancel').addEventListener('click', closeCredModal)
+document.getElementById('cred-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('cred-modal')) closeCredModal()
+})
+
+document.getElementById('modal-connect').addEventListener('click', async () => {
+  if (!modalItem) return
+
+  // Collect field values
+  const creds = {}
+  let missing = false
+  for (const f of modalItem.credFields) {
+    const val = (document.getElementById(`mf-${f.key}`)?.value || '').trim()
+    if (!val) { missing = true; document.getElementById(`mf-${f.key}`)?.focus(); break }
+    creds[f.key] = val
+  }
+  if (missing) { toast('Please fill in all fields'); return }
+
+  const btn = document.getElementById('modal-connect')
+  btn.disabled    = true
+  btn.textContent = 'Connecting…'
+
+  try {
+    // Save credentials to keychain via IPC
+    await api.setup.saveCredentials(creds)
+
+    // Launch OAuth or direct connect
+    let res
+    if (modalItem.connectFn) {
+      res = await modalItem.connectFn(creds)
+    } else {
+      res = await modalItem.oauthFn()
+    }
+
+    if (res && res.ok) {
+      closeCredModal()
+      await loadAll()
+      toast(`${modalItem.name} connected successfully`)
+    } else {
+      toast(`Failed: ${res?.error || 'unknown error'}`)
+    }
+  } catch (e) {
+    toast(`Error: ${e.message}`)
+  } finally {
+    btn.disabled    = false
+    btn.textContent = 'Save & Connect →'
+  }
+})
+
+// ── Keyboard shortcut ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCredModal()
+  if (e.key === 'Enter' && document.getElementById('cred-modal').style.display !== 'none') {
+    document.getElementById('modal-connect').click()
+  }
+})
+
+// ── Connections rendering ────────────────────────────────────────────────────
+
 function isConnected(item) {
-  const val = settings[item.settingKey] || ''
-  return val === item.id
+  return (settings[item.settingKey] || '') === item.id
 }
 
 function renderConnections() {
@@ -443,22 +673,12 @@ function renderConnections() {
       <div class="conn-section-title">${group.group}</div>
       <div class="conn-grid">
         ${group.items.map(item => {
-          const isConn  = isConnected(item)
-          const addrLine = (item.id === 'gmail' || item.id === 'outlook') && isConn && settings.email_address
+          const conn = isConnected(item)
+          const addrLine = (item.id === 'gmail' || item.id === 'outlook') && conn && settings.email_address
             ? `<div class="conn-addr">${settings.email_address}</div>` : ''
 
-          const actionHtml = item.type === 'apikey'
-            ? `<div class="apikey-row" id="apikey-row-${item.id}" style="display:${isConn ? 'none' : 'flex'}">
-                <input class="apikey-input" id="apikey-input-${item.id}" type="password" placeholder="${item.placeholder || 'API key…'}" autocomplete="off" />
-                <button class="btn-conn" data-id="${item.id}" data-type="apikey">${isConn ? '↻ Reconnect' : 'Save →'}</button>
-               </div>
-               ${isConn ? `<button class="btn-conn connected" data-id="${item.id}" data-type="apikey-reconnect">↻ Reconnect</button>` : ''}`
-            : `<button class="btn-conn ${isConn ? 'connected' : ''}" data-id="${item.id}" data-type="oauth">
-                ${isConn ? '↻ Reconnect' : 'Connect →'}
-               </button>`
-
           return `
-            <div class="conn-card ${isConn ? 'connected' : ''}" id="card-${item.id}">
+            <div class="conn-card ${conn ? 'connected' : ''}" id="card-${item.id}">
               <div class="conn-lft">
                 <div class="conn-icon">${item.icon}</div>
                 <div>
@@ -468,8 +688,10 @@ function renderConnections() {
                 </div>
               </div>
               <div class="conn-rgt">
-                <span class="conn-st ${isConn ? 'on' : 'off'}">${isConn ? '● Connected' : '○ Not connected'}</span>
-                ${actionHtml}
+                <span class="conn-st ${conn ? 'on' : 'off'}">${conn ? '● Connected' : '○ Not connected'}</span>
+                <button class="btn-conn ${conn ? 'connected' : ''}" data-id="${item.id}">
+                  ${conn ? '↻ Reconnect' : 'Connect →'}
+                </button>
               </div>
             </div>`
         }).join('')}
@@ -480,51 +702,10 @@ function renderConnections() {
 
 function bindConnButtons() {
   document.querySelectorAll('.btn-conn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const id   = btn.dataset.id
-      const type = btn.dataset.type
       const item = CONNECTIONS.flatMap(g => g.items).find(i => i.id === id)
-      if (!item) return
-
-      btn.disabled    = true
-      btn.textContent = 'Connecting…'
-
-      try {
-        let res
-
-        if (type === 'apikey') {
-          const input = document.getElementById(`apikey-input-${id}`)
-          const key   = input ? input.value.trim() : ''
-          if (!key) {
-            toast('Please enter your API key')
-            btn.disabled    = false
-            btn.textContent = 'Save →'
-            return
-          }
-          res = await item.connectFn(key)
-        } else if (type === 'apikey-reconnect') {
-          // Show the input row
-          const row = document.getElementById(`apikey-row-${id}`)
-          if (row) row.style.display = 'flex'
-          btn.style.display = 'none'
-          return
-        } else {
-          res = await item.oauthFn()
-        }
-
-        if (res && res.ok) {
-          await loadAll()
-          toast(`${item.name} connected`)
-        } else {
-          toast(`Failed: ${res?.error || 'unknown error'}`)
-          btn.disabled    = false
-          btn.textContent = isConnected(item) ? '↻ Reconnect' : 'Connect →'
-        }
-      } catch (e) {
-        toast(`Error: ${e.message}`)
-        btn.disabled    = false
-        btn.textContent = isConnected(item) ? '↻ Reconnect' : 'Connect →'
-      }
+      if (item) openCredModal(item)
     })
   })
 }
