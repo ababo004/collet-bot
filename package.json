@@ -1,6 +1,6 @@
 {
   "name": "collet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Autonomous accounts receivable desktop bot",
   "main": "src/main/main.js",
   "scripts": {
