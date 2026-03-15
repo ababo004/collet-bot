@@ -27,30 +27,57 @@ jobs:
       - name: Generate icons
         run: npm run icons
 
-      - name: Build macOS (arm64)
+      # ── Notarized build (active when Apple creds are set as GitHub secrets) ──
+      # Required secrets: MAC_CERT_P12_BASE64, MAC_CERT_PASSWORD, APPLE_ID,
+      #                   APPLE_ID_PASSWORD (app-specific), APPLE_TEAM_ID
+      - name: Import Developer ID certificate
+        if: ${{ secrets.MAC_CERT_P12_BASE64 != '' }}
+        env:
+          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+        run: |
+          echo "$MAC_CERT_P12_BASE64" | base64 --decode > /tmp/cert.p12
+          security create-keychain -p actions build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p actions build.keychain
+          security import /tmp/cert.p12 -k build.keychain -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k actions build.keychain
+
+      - name: Build macOS — notarized
+        if: ${{ secrets.MAC_CERT_P12_BASE64 != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npx electron-builder --mac --publish always
+
+      # ── Ad-hoc build (fallback when no Apple creds) ──────────────────────
+      - name: Build macOS — ad-hoc signed (no Apple account)
+        if: ${{ secrets.MAC_CERT_P12_BASE64 == '' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
         run: npx electron-builder --mac --publish never
 
-      - name: Ad-hoc sign app (avoids "damaged" Gatekeeper error)
+      - name: Ad-hoc sign app
+        if: ${{ secrets.MAC_CERT_P12_BASE64 == '' }}
         run: |
-          echo "=== dist layout ==="
-          find dist -maxdepth 3 -name "*.app" -o -name "*.dmg" | head -20
           APP=$(find dist -maxdepth 5 -name "*.app" -type d | head -1)
-          echo "Signing: $APP"
+          echo "Signing ad-hoc: $APP"
           codesign --force --deep --sign - "$APP"
 
-      - name: Repackage signed DMG
+      - name: Repackage DMG with signed app
+        if: ${{ secrets.MAC_CERT_P12_BASE64 == '' }}
         run: |
           APP=$(find dist -maxdepth 5 -name "*.app" -type d | head -1)
           VERSION=$(node -p "require('./package.json').version")
           DMG_PATH="dist/collet-${VERSION}-arm64.dmg"
           rm -f "$DMG_PATH"
           hdiutil create -volname "Collet" -srcfolder "$APP" -ov -format UDZO "$DMG_PATH"
-          echo "Created: $DMG_PATH"
 
-      - name: Upload DMG and installer to GitHub Release
+      - name: Upload to GitHub Release
+        if: ${{ secrets.MAC_CERT_P12_BASE64 == '' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

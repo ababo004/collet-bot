@@ -44,7 +44,7 @@ module.exports = {
       { target: 'portable', arch: ['x64'] }
     ],
     // Publish metadata so auto-updater works
-    artifactName: 'Collet-Setup-${version}.${ext}',
+    artifactName: 'collet-Setup-${version}.${ext}',
     requestedExecutionLevel: 'asInvoker'
   },
 
@@ -59,7 +59,7 @@ module.exports = {
     uninstallerIcon: 'assets/icon.png',
     installerHeader: 'assets/icon.png',
     license: 'LICENSE',
-    artifactName: 'Collet-Setup-${version}.${ext}',
+    artifactName: 'collet-Setup-${version}.${ext}',
     deleteAppDataOnUninstall: false
   },
 
