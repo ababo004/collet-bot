@@ -27,16 +27,27 @@ jobs:
       - name: Generate icons
         run: npm run icons
 
+      - name: Import Mac certificate (if available)
+        if: ${{ secrets.MAC_CERT_P12_BASE64 != '' }}
+        env:
+          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          MAC_CERT_PASSWORD:   ${{ secrets.MAC_CERT_PASSWORD }}
+        run: |
+          echo "$MAC_CERT_P12_BASE64" | base64 --decode > /tmp/certificate.p12
+          security create-keychain -p "" build.keychain
+          security import /tmp/certificate.p12 -k build.keychain -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+
       - name: Build macOS (x64 + arm64)
         env:
           GH_TOKEN:                    ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID:                    ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID:               ${{ secrets.APPLE_TEAM_ID }}
-          # Skip code signing if certificate secret is not configured
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_P12_BASE64 != '' && 'true' || 'false' }}
-          CSC_LINK:                    ${{ secrets.MAC_CERT_P12_BASE64 }}
-          CSC_KEY_PASSWORD:            ${{ secrets.MAC_CERT_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
         run: npx electron-builder --mac --publish always
 
   # ── Windows build ─────────────────────────────────────────────────────────
