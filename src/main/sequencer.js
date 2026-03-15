@@ -43,16 +43,32 @@ async function processInvoice(invoice) {
 
   const daysOverdue = Math.max(0, daysRelative)
 
-  // Optionally enrich client_name with HubSpot first name for personalization
+  // Optionally enrich client_name from connected CRM
   let clientName = invoice.client_name
-  if (getSetting('crm_source') === 'hubspot') {
+  const crmSource = getSetting('crm_source')
+
+  if (crmSource === 'hubspot') {
     try {
       const { getContactByEmail } = require('../integrations/hubspot')
       const contact = await getContactByEmail(invoice.client_email)
       if (contact?.firstName) clientName = contact.firstName
-    } catch {
-      // Non-fatal: fall back to invoice client name
-    }
+    } catch { /* Non-fatal */ }
+  }
+
+  if (crmSource === 'salesforce') {
+    try {
+      const { findContactByEmail } = require('../integrations/salesforce')
+      const contact = await findContactByEmail(invoice.client_email)
+      if (contact?.name) clientName = contact.name.split(' ')[0]
+    } catch { /* Non-fatal */ }
+  }
+
+  if (crmSource === 'zoho') {
+    try {
+      const { findContactByEmail } = require('../integrations/zoho')
+      const contact = await findContactByEmail(invoice.client_email)
+      if (contact?.name) clientName = contact.name.split(' ')[0]
+    } catch { /* Non-fatal */ }
   }
 
   const emailData = templateFn({
@@ -75,6 +91,50 @@ async function processInvoice(invoice) {
 
     logSequenceAction(invoice.id, stage, invoice.client_email, emailData.subject, 'sent')
     log.info(`Invoice ${invoice.id}: sent '${stage}' to ${invoice.client_email}`)
+
+    // Log email activity back to connected CRM
+    const crmSrc = getSetting('crm_source')
+    if (crmSrc === 'salesforce') {
+      try {
+        const { findContactByEmail, logActivity } = require('../integrations/salesforce')
+        const contact = await findContactByEmail(invoice.client_email)
+        if (contact) {
+          await logActivity({
+            whoId:       contact.id,
+            subject:     emailData.subject,
+            description: `Collet AR automation — ${stage} email sent for invoice ${invoice.id}`,
+          })
+        }
+      } catch { /* Non-fatal */ }
+    }
+
+    if (crmSrc === 'zoho') {
+      try {
+        const { findContactByEmail, logNote } = require('../integrations/zoho')
+        const contact = await findContactByEmail(invoice.client_email)
+        if (contact) {
+          await logNote({
+            contactId: contact.id,
+            title:     `AR Email: ${stage}`,
+            content:   `Collet sent '${stage}' email for invoice ${invoice.id} — "${emailData.subject}"`,
+          })
+        }
+      } catch { /* Non-fatal */ }
+    }
+
+    if (crmSrc === 'hubspot') {
+      try {
+        const { logEngagement } = require('../integrations/hubspot')
+        if (typeof logEngagement === 'function') {
+          await logEngagement({
+            email:   invoice.client_email,
+            subject: emailData.subject,
+            body:    `Collet AR: ${stage} — invoice ${invoice.id}`,
+          })
+        }
+      } catch { /* Non-fatal */ }
+    }
+
     return { status: 'sent', stage }
   } catch (err) {
     logSequenceAction(invoice.id, stage, invoice.client_email, emailData.subject, 'failed')

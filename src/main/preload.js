@@ -6,6 +6,12 @@ const { contextBridge, ipcRenderer } = require('electron')
  * No direct Node.js or Electron access is granted to the renderer.
  */
 contextBridge.exposeInMainWorld('collet', {
+  // Dashboard
+  dashboard: {
+    getData:  ()  => ipcRenderer.invoke('dashboard:get-data'),
+    scanNow:  ()  => ipcRenderer.invoke('dashboard:scan-now'),
+  },
+
   // Setup wizard
   setup: {
     validateLicense: (key) =>
@@ -26,6 +32,18 @@ contextBridge.exposeInMainWorld('collet', {
       ipcRenderer.invoke('setup:oauth-xero'),
     oauthHubSpot: () =>
       ipcRenderer.invoke('setup:oauth-hubspot'),
+    oauthFreshBooks: () =>
+      ipcRenderer.invoke('setup:oauth-freshbooks'),
+    connectWave: (apiKey) =>
+      ipcRenderer.invoke('setup:connect-wave', apiKey),
+    oauthSalesforce: () =>
+      ipcRenderer.invoke('setup:oauth-salesforce'),
+    oauthZoho: () =>
+      ipcRenderer.invoke('setup:oauth-zoho'),
+    connectStripe: (secretKey) =>
+      ipcRenderer.invoke('setup:connect-stripe', secretKey),
+    oauthPayPal: () =>
+      ipcRenderer.invoke('setup:oauth-paypal'),
     complete: () =>
       ipcRenderer.invoke('setup:complete'),
   },
@@ -52,6 +70,14 @@ contextBridge.exposeInMainWorld('collet', {
       ipcRenderer.invoke('settings:reauth-xero'),
     reauthHubSpot: () =>
       ipcRenderer.invoke('settings:reauth-hubspot'),
+    reauthFreshBooks: () =>
+      ipcRenderer.invoke('settings:reauth-freshbooks'),
+    reauthSalesforce: () =>
+      ipcRenderer.invoke('settings:reauth-salesforce'),
+    reauthZoho: () =>
+      ipcRenderer.invoke('settings:reauth-zoho'),
+    reauthPayPal: () =>
+      ipcRenderer.invoke('settings:reauth-paypal'),
   },
 
   // Open external URLs safely
@@ -64,6 +90,11 @@ contextBridge.exposeInMainWorld('collet', {
       'https://appcenter.intuit.com',
       'https://login.xero.com',
       'https://app.hubspot.com',
+      'https://auth.freshbooks.com',
+      'https://login.salesforce.com',
+      'https://accounts.zoho.com',
+      'https://www.paypal.com',
+      'https://www.sandbox.paypal.com',
     ]
     const isAllowed = allowed.some(origin => url.startsWith(origin))
     if (isAllowed) {

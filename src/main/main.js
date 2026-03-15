@@ -278,6 +278,90 @@ ipcMain.handle('setup:oauth-hubspot', async () => {
   return startHubSpotOAuth()
 })
 
+// ── New integrations ─────────────────────────────────────────────────────
+
+ipcMain.handle('setup:oauth-freshbooks', async () => {
+  if (process.env.NODE_ENV === 'development') {
+    const { setSetting } = require('./db')
+    setSetting('accounting_source', 'freshbooks')
+    setSetting('fb_account_id', 'dev-fb-123')
+    return { ok: true, provider: 'freshbooks', dev: true }
+  }
+  const { startFreshBooksOAuth } = require('../integrations/freshbooks')
+  return startFreshBooksOAuth()
+})
+
+ipcMain.handle('setup:connect-wave', async (_, apiKey) => {
+  if (process.env.NODE_ENV === 'development') {
+    const { setSetting } = require('./db')
+    setSetting('accounting_source', 'wave')
+    return { ok: true, provider: 'wave', dev: true }
+  }
+  const { connectWave } = require('../integrations/wave')
+  return connectWave(apiKey)
+})
+
+ipcMain.handle('setup:oauth-salesforce', async () => {
+  if (process.env.NODE_ENV === 'development') {
+    const { setSetting } = require('./db')
+    setSetting('crm_source', 'salesforce')
+    return { ok: true, provider: 'salesforce', dev: true }
+  }
+  const { startSalesforceOAuth } = require('../integrations/salesforce')
+  return startSalesforceOAuth()
+})
+
+ipcMain.handle('setup:oauth-zoho', async () => {
+  if (process.env.NODE_ENV === 'development') {
+    const { setSetting } = require('./db')
+    setSetting('crm_source', 'zoho')
+    return { ok: true, provider: 'zoho', dev: true }
+  }
+  const { startZohoOAuth } = require('../integrations/zoho')
+  return startZohoOAuth()
+})
+
+ipcMain.handle('setup:connect-stripe', async (_, secretKey) => {
+  if (process.env.NODE_ENV === 'development') {
+    const { setSetting } = require('./db')
+    setSetting('payment_source', 'stripe')
+    return { ok: true, provider: 'stripe', dev: true }
+  }
+  const { connectStripe } = require('../integrations/stripe')
+  return connectStripe(secretKey)
+})
+
+ipcMain.handle('setup:oauth-paypal', async () => {
+  if (process.env.NODE_ENV === 'development') {
+    const { setSetting } = require('./db')
+    setSetting('payment_source', 'paypal')
+    return { ok: true, provider: 'paypal', dev: true }
+  }
+  const { startPayPalOAuth } = require('../integrations/paypal')
+  return startPayPalOAuth()
+})
+
+// Re-auth handlers for all new integrations
+ipcMain.handle('settings:reauth-freshbooks', async () => {
+  const { startFreshBooksOAuth } = require('../integrations/freshbooks')
+  return startFreshBooksOAuth()
+})
+
+ipcMain.handle('settings:reauth-salesforce', async () => {
+  const { startSalesforceOAuth } = require('../integrations/salesforce')
+  return startSalesforceOAuth()
+})
+
+ipcMain.handle('settings:reauth-zoho', async () => {
+  const { startZohoOAuth } = require('../integrations/zoho')
+  return startZohoOAuth()
+})
+
+ipcMain.handle('settings:reauth-paypal', async () => {
+  const { startPayPalOAuth } = require('../integrations/paypal')
+  return startPayPalOAuth()
+})
+
 ipcMain.handle('setup:complete', async () => {
   const { setSetting } = require('./db')
   setSetting('setup_complete', 'true')
@@ -298,6 +382,7 @@ ipcMain.handle('dashboard:get-data', async () => {
       email_address:     getSetting('email_address'),
       accounting_source: getSetting('accounting_source'),
       crm_source:        getSetting('crm_source'),
+      payment_source:    getSetting('payment_source'),
       scan_frequency:    getSetting('scan_frequency'),
       sender_name:       getSetting('sender_name'),
       pay_link:          getSetting('pay_link'),

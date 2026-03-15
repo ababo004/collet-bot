@@ -21,7 +21,8 @@
     "googleapis": "^140.0.1",
     "keytar": "^7.9.0",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.9"
+    "nodemailer": "^6.9.9",
+    "stripe": "^20.4.1"
   },
   "devDependencies": {
     "@electron/notarize": "^2.3.0",

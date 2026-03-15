@@ -396,6 +396,26 @@
       letter-spacing: 0.05em;
     }
 
+    .apikey-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .apikey-input {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 8px;
+      border: 1px solid var(--border-str);
+      border-radius: 5px;
+      background: var(--bg);
+      color: var(--text);
+      width: 200px;
+      outline: none;
+    }
+    .apikey-input:focus { border-color: var(--accent); }
+    .conn-addr { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
     /* ── Templates ────────────────────────────── */
     .template-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 

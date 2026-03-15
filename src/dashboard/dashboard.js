@@ -73,16 +73,19 @@ async function loadAll() {
     stats    = d.stats    || {}
     settings = d.settings || {}
 
+    // Derive connection state from settings returned by main process
     connState = {
-      gmail:       settings.email_provider === 'gmail',
-      outlook:     settings.email_provider === 'outlook',
-      quickbooks:  ['quickbooks','both'].includes(settings.accounting_source),
-      xero:        ['xero','both'].includes(settings.accounting_source),
-      hubspot:     settings.crm_source === 'hubspot',
-      stripe:      false,
-      salesforce:  false,
-      freshbooks:  false,
-      zoho:        false,
+      gmail:       settings.email_provider      === 'gmail',
+      outlook:     settings.email_provider      === 'outlook',
+      quickbooks:  settings.accounting_source   === 'quickbooks',
+      xero:        settings.accounting_source   === 'xero',
+      freshbooks:  settings.accounting_source   === 'freshbooks',
+      wave:        settings.accounting_source   === 'wave',
+      hubspot:     settings.crm_source          === 'hubspot',
+      salesforce:  settings.crm_source          === 'salesforce',
+      zoho:        settings.crm_source          === 'zoho',
+      stripe:      settings.payment_source      === 'stripe',
+      paypal:      settings.payment_source      === 'paypal',
     }
 
     if (stats.lastScan) {
@@ -390,39 +393,49 @@ function bindTemplates() {
 
 // ── Connections ───────────────────────────────────────────────────────────────
 
+// ── Connection catalogue ───────────────────────────────────────────────────
+// type: 'oauth'       → launches OAuth browser flow
+// type: 'apikey'      → shows inline API key input before connecting
+// settingKey          → which settings key determines "connected" state
+
 const CONNECTIONS = [
   {
     group: 'Email',
     items: [
-      { id: 'gmail',      name: 'Gmail',            icon: 'G',   desc: 'Google OAuth 2.0',         oauthFn: () => api.setup.oauthGmail() },
-      { id: 'outlook',    name: 'Outlook / 365',    icon: 'M',   desc: 'Microsoft OAuth 2.0',      oauthFn: () => api.setup.oauthOutlook() },
+      { id: 'gmail',       name: 'Gmail',             icon: 'G',   desc: 'Send & detect payments via Gmail',       type: 'oauth',  settingKey: 'email_provider',    oauthFn: () => api.setup.oauthGmail() },
+      { id: 'outlook',     name: 'Outlook / M365',    icon: 'M',   desc: 'Send & detect payments via Outlook',     type: 'oauth',  settingKey: 'email_provider',    oauthFn: () => api.setup.oauthOutlook() },
     ]
   },
   {
     group: 'Accounting',
     items: [
-      { id: 'quickbooks', name: 'QuickBooks Online', icon: 'QB',  desc: 'Intuit OAuth 2.0',         oauthFn: () => api.setup.oauthQuickBooks() },
-      { id: 'xero',       name: 'Xero',              icon: 'X',   desc: 'Xero OAuth 2.0',           oauthFn: () => api.setup.oauthXero() },
-      { id: 'freshbooks', name: 'FreshBooks',        icon: 'FB',  desc: 'FreshBooks OAuth 2.0',     comingSoon: true },
-      { id: 'wave',       name: 'Wave',              icon: 'W',   desc: 'Wave API',                 comingSoon: true },
+      { id: 'quickbooks',  name: 'QuickBooks Online', icon: 'QB',  desc: 'Sync unpaid invoices automatically',     type: 'oauth',  settingKey: 'accounting_source', oauthFn: () => api.setup.oauthQuickBooks() },
+      { id: 'xero',        name: 'Xero',              icon: 'X',   desc: 'Sync unpaid invoices automatically',     type: 'oauth',  settingKey: 'accounting_source', oauthFn: () => api.setup.oauthXero() },
+      { id: 'freshbooks',  name: 'FreshBooks',        icon: 'FB',  desc: 'Sync outstanding invoices from FreshBooks', type: 'oauth', settingKey: 'accounting_source', oauthFn: () => api.setup.oauthFreshBooks() },
+      { id: 'wave',        name: 'Wave',              icon: 'W',   desc: 'Sync invoices via Wave API key',         type: 'apikey', settingKey: 'accounting_source', placeholder: 'Wave API key…', connectFn: (k) => api.setup.connectWave(k) },
     ]
   },
   {
     group: 'CRM',
     items: [
-      { id: 'hubspot',    name: 'HubSpot CRM',       icon: 'HS',  desc: 'HubSpot OAuth 2.0',        oauthFn: () => api.setup.oauthHubSpot() },
-      { id: 'salesforce', name: 'Salesforce',        icon: 'SF',  desc: 'Salesforce OAuth 2.0',     comingSoon: true },
-      { id: 'zoho',       name: 'Zoho CRM',          icon: 'ZH',  desc: 'Zoho OAuth 2.0',           comingSoon: true },
+      { id: 'hubspot',     name: 'HubSpot CRM',       icon: 'HS',  desc: 'Log activity & update contact status',   type: 'oauth',  settingKey: 'crm_source',        oauthFn: () => api.setup.oauthHubSpot() },
+      { id: 'salesforce',  name: 'Salesforce',        icon: 'SF',  desc: 'Log tasks & close Opportunities on payment', type: 'oauth', settingKey: 'crm_source',    oauthFn: () => api.setup.oauthSalesforce() },
+      { id: 'zoho',        name: 'Zoho CRM',          icon: 'ZH',  desc: 'Log notes & close Deals on payment',     type: 'oauth',  settingKey: 'crm_source',        oauthFn: () => api.setup.oauthZoho() },
     ]
   },
   {
-    group: 'Payments',
+    group: 'Payment Detection',
     items: [
-      { id: 'stripe',     name: 'Stripe',            icon: 'S',   desc: 'Auto-detect paid invoices', comingSoon: true },
-      { id: 'paypal',     name: 'PayPal',            icon: 'PP',  desc: 'Auto-detect payments',      comingSoon: true },
+      { id: 'stripe',      name: 'Stripe',            icon: 'S',   desc: 'Auto-mark invoices paid via Stripe',     type: 'apikey', settingKey: 'payment_source',    placeholder: 'sk_live_… or sk_test_…', connectFn: (k) => api.setup.connectStripe(k) },
+      { id: 'paypal',      name: 'PayPal',            icon: 'PP',  desc: 'Auto-mark invoices paid via PayPal',     type: 'oauth',  settingKey: 'payment_source',    oauthFn: () => api.setup.oauthPayPal() },
     ]
   },
 ]
+
+function isConnected(item) {
+  const val = settings[item.settingKey] || ''
+  return val === item.id
+}
 
 function renderConnections() {
   return CONNECTIONS.map(group => `
@@ -430,9 +443,19 @@ function renderConnections() {
       <div class="conn-section-title">${group.group}</div>
       <div class="conn-grid">
         ${group.items.map(item => {
-          const isConn = connState[item.id]
+          const isConn  = isConnected(item)
           const addrLine = (item.id === 'gmail' || item.id === 'outlook') && isConn && settings.email_address
             ? `<div class="conn-addr">${settings.email_address}</div>` : ''
+
+          const actionHtml = item.type === 'apikey'
+            ? `<div class="apikey-row" id="apikey-row-${item.id}" style="display:${isConn ? 'none' : 'flex'}">
+                <input class="apikey-input" id="apikey-input-${item.id}" type="password" placeholder="${item.placeholder || 'API key…'}" autocomplete="off" />
+                <button class="btn-conn" data-id="${item.id}" data-type="apikey">${isConn ? '↻ Reconnect' : 'Save →'}</button>
+               </div>
+               ${isConn ? `<button class="btn-conn connected" data-id="${item.id}" data-type="apikey-reconnect">↻ Reconnect</button>` : ''}`
+            : `<button class="btn-conn ${isConn ? 'connected' : ''}" data-id="${item.id}" data-type="oauth">
+                ${isConn ? '↻ Reconnect' : 'Connect →'}
+               </button>`
 
           return `
             <div class="conn-card ${isConn ? 'connected' : ''}" id="card-${item.id}">
@@ -446,12 +469,7 @@ function renderConnections() {
               </div>
               <div class="conn-rgt">
                 <span class="conn-st ${isConn ? 'on' : 'off'}">${isConn ? '● Connected' : '○ Not connected'}</span>
-                ${item.comingSoon
-                  ? `<span class="coming-soon-tag">COMING SOON</span>`
-                  : `<button class="btn-conn ${isConn ? 'connected' : ''}" data-id="${item.id}">
-                      ${isConn ? '↻ Reconnect' : 'Connect →'}
-                    </button>`
-                }
+                ${actionHtml}
               </div>
             </div>`
         }).join('')}
@@ -464,27 +482,48 @@ function bindConnButtons() {
   document.querySelectorAll('.btn-conn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id   = btn.dataset.id
+      const type = btn.dataset.type
       const item = CONNECTIONS.flatMap(g => g.items).find(i => i.id === id)
-      if (!item || item.comingSoon) return
+      if (!item) return
 
       btn.disabled    = true
       btn.textContent = 'Connecting…'
 
       try {
-        const res = await item.oauthFn()
+        let res
+
+        if (type === 'apikey') {
+          const input = document.getElementById(`apikey-input-${id}`)
+          const key   = input ? input.value.trim() : ''
+          if (!key) {
+            toast('Please enter your API key')
+            btn.disabled    = false
+            btn.textContent = 'Save →'
+            return
+          }
+          res = await item.connectFn(key)
+        } else if (type === 'apikey-reconnect') {
+          // Show the input row
+          const row = document.getElementById(`apikey-row-${id}`)
+          if (row) row.style.display = 'flex'
+          btn.style.display = 'none'
+          return
+        } else {
+          res = await item.oauthFn()
+        }
+
         if (res && res.ok) {
-          connState[id] = true
           await loadAll()
           toast(`${item.name} connected`)
         } else {
           toast(`Failed: ${res?.error || 'unknown error'}`)
           btn.disabled    = false
-          btn.textContent = 'Connect →'
+          btn.textContent = isConnected(item) ? '↻ Reconnect' : 'Connect →'
         }
-      } catch(e) {
+      } catch (e) {
         toast(`Error: ${e.message}`)
         btn.disabled    = false
-        btn.textContent = 'Connect →'
+        btn.textContent = isConnected(item) ? '↻ Reconnect' : 'Connect →'
       }
     })
   })
