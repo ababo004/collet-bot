@@ -35,25 +35,28 @@ jobs:
 
       - name: Ad-hoc sign app (avoids "damaged" Gatekeeper error)
         run: |
-          APP=$(find dist -name "Collet.app" -maxdepth 4 | head -1)
+          echo "=== dist layout ==="
+          find dist -maxdepth 3 -name "*.app" -o -name "*.dmg" | head -20
+          APP=$(find dist -maxdepth 5 -name "*.app" -type d | head -1)
           echo "Signing: $APP"
           codesign --force --deep --sign - "$APP"
 
       - name: Repackage signed DMG
         run: |
-          APP=$(find dist -name "Collet.app" -maxdepth 4 | head -1)
+          APP=$(find dist -maxdepth 5 -name "*.app" -type d | head -1)
           VERSION=$(node -p "require('./package.json').version")
           DMG_PATH="dist/collet-${VERSION}-arm64.dmg"
           rm -f "$DMG_PATH"
           hdiutil create -volname "Collet" -srcfolder "$APP" -ov -format UDZO "$DMG_PATH"
           echo "Created: $DMG_PATH"
 
-      - name: Upload to GitHub Release
+      - name: Upload DMG and installer to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
           gh release upload "v${VERSION}" "dist/collet-${VERSION}-arm64.dmg" --clobber
+          gh release upload "v${VERSION}" "scripts/install-mac.command" --clobber
 
   # ── Windows build ─────────────────────────────────────────────────────────
   build-windows:
