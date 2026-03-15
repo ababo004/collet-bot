@@ -27,13 +27,33 @@ jobs:
       - name: Generate icons
         run: npm run icons
 
-      - name: Build macOS (x64 + arm64)
+      - name: Build macOS (arm64)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Disable code signing — builds are unsigned for open download
-          # Add MAC_CERT_P12_BASE64 / APPLE_ID secrets when ready to notarize
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npx electron-builder --mac --publish always
+        run: npx electron-builder --mac --publish never
+
+      - name: Ad-hoc sign app (avoids "damaged" Gatekeeper error)
+        run: |
+          APP=$(find dist -name "Collet.app" -maxdepth 4 | head -1)
+          echo "Signing: $APP"
+          codesign --force --deep --sign - "$APP"
+
+      - name: Repackage signed DMG
+        run: |
+          APP=$(find dist -name "Collet.app" -maxdepth 4 | head -1)
+          VERSION=$(node -p "require('./package.json').version")
+          DMG_PATH="dist/collet-${VERSION}-arm64.dmg"
+          rm -f "$DMG_PATH"
+          hdiutil create -volname "Collet" -srcfolder "$APP" -ov -format UDZO "$DMG_PATH"
+          echo "Created: $DMG_PATH"
+
+      - name: Upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh release upload "v${VERSION}" "dist/collet-${VERSION}-arm64.dmg" --clobber
 
   # ── Windows build ─────────────────────────────────────────────────────────
   build-windows:
