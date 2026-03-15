@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Collet — Settings</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0C0C0C; --surface: #111111; --surface-2: #1A1A1A;
+      --border: #242424; --text-primary: #F0EDE6; --text-secondary: #AAAAAA;
+      --text-muted: #555250; --accent: #C8402A; --green: #1D7A45;
+      --amber: #B87D2A;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      padding: 0;
+      width: 520px;
+      height: 600px;
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .wordmark { font-size: 12px; letter-spacing: 0.18em; }
+    .title { font-size: 9px; color: var(--text-muted); letter-spacing: 0.1em; }
+
+    .scroll-body {
+      height: calc(600px - 52px - 56px); /* header + footer */
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+    .scroll-body::-webkit-scrollbar { width: 4px; }
+    .scroll-body::-webkit-scrollbar-track { background: var(--bg); }
+    .scroll-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .section-label {
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+      margin-top: 24px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .field-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+    .field-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 9px 10px;
+      outline: none;
+      width: 100%;
+      border-radius: 0;
+    }
+    .field-input:focus { border-color: var(--text-muted); }
+    select.field-input { cursor: pointer; appearance: none; }
+
+    /* Reauth row */
+    .reauth-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .reauth-card {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .reauth-name { font-size: 10px; }
+    .reauth-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      padding: 4px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.1s, color 0.1s;
+    }
+    .reauth-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .reauth-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .reauth-status {
+      font-size: 9px;
+      padding-top: 2px;
+    }
+    .reauth-status.ok    { color: var(--green); }
+    .reauth-status.error { color: var(--accent); }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding: 10px 20px;
+      cursor: pointer;
+      flex: 1;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .status-msg {
+      font-size: 10px;
+      min-height: 16px;
+    }
+    .status-msg.ok    { color: var(--green); }
+    .status-msg.error { color: var(--accent); }
+
+    .rule {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="wordmark">COLLET</span>
+    <span class="title">SETTINGS</span>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- ── Schedule ───────────────────────────────────────────── -->
+    <div class="section-label">// SCAN SCHEDULE</div>
+
+    <div class="field-group">
+      <label class="field-label">SCAN FREQUENCY</label>
+      <select class="field-input" id="scan-frequency">
+        <option value="0 * * * *">Every hour</option>
+        <option value="0 */2 * * *">Every 2 hours</option>
+        <option value="0 */4 * * *">Every 4 hours</option>
+        <option value="0 */6 * * *">Every 6 hours</option>
+        <option value="0 9,17 * * 1-5">9 am + 5 pm on weekdays</option>
+        <option value="0 9 * * 1-5">9 am on weekdays only</option>
+      </select>
+    </div>
+
+    <!-- ── Email ──────────────────────────────────────────────── -->
+    <div class="section-label">// EMAIL SETTINGS</div>
+
+    <div class="field-group">
+      <label class="field-label">SENDER NAME</label>
+      <input type="text" id="sender-name" class="field-input"
+             placeholder="Accounts Receivable" autocomplete="off" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">PAYMENT LINK (optional)</label>
+      <input type="url" id="pay-link" class="field-input"
+             placeholder="https://pay.yourcompany.com" autocomplete="off" />
+    </div>
+
+    <!-- ── Reconnect integrations ─────────────────────────────── -->
+    <div class="section-label">// RECONNECT INTEGRATIONS</div>
+    <p style="font-size:10px; color:var(--text-muted); margin-bottom:12px; line-height:1.6;">
+      Re-run OAuth if a connection has expired or you switched accounts.
+    </p>
+
+    <div class="reauth-grid">
+
+      <div class="reauth-card">
+        <span class="reauth-name">Gmail</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <button class="reauth-btn" id="reauth-gmail">Reconnect</button>
+          <span class="reauth-status" id="reauth-gmail-status"></span>
+        </div>
+      </div>
+
+      <div class="reauth-card">
+        <span class="reauth-name">Outlook</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <button class="reauth-btn" id="reauth-outlook">Reconnect</button>
+          <span class="reauth-status" id="reauth-outlook-status"></span>
+        </div>
+      </div>
+
+      <div class="reauth-card">
+        <span class="reauth-name">QuickBooks</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <button class="reauth-btn" id="reauth-quickbooks">Reconnect</button>
+          <span class="reauth-status" id="reauth-quickbooks-status"></span>
+        </div>
+      </div>
+
+      <div class="reauth-card">
+        <span class="reauth-name">Xero</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <button class="reauth-btn" id="reauth-xero">Reconnect</button>
+          <span class="reauth-status" id="reauth-xero-status"></span>
+        </div>
+      </div>
+
+      <div class="reauth-card">
+        <span class="reauth-name">HubSpot</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <button class="reauth-btn" id="reauth-hubspot">Reconnect</button>
+          <span class="reauth-status" id="reauth-hubspot-status"></span>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /scroll-body -->
+
+  <div class="footer">
+    <button class="btn-primary" id="save-btn">SAVE SETTINGS</button>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+
+  <script>
+    const api = window.collet
+
+    // ── Load current settings ────────────────────────────────────
+    async function loadSettings() {
+      const s = await api.settings.getAll()
+      const freqSel = document.getElementById('scan-frequency')
+      const opt = freqSel.querySelector(`option[value="${s.scan_frequency}"]`)
+      if (opt) opt.selected = true
+      document.getElementById('sender-name').value = s.sender_name || ''
+      document.getElementById('pay-link').value    = s.pay_link    || ''
+    }
+
+    // ── Save ─────────────────────────────────────────────────────
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('save-btn')
+      const msg = document.getElementById('status-msg')
+      btn.disabled = true
+      msg.className = 'status-msg'
+      msg.textContent = 'Saving…'
+
+      try {
+        await api.settings.save({
+          scan_frequency: document.getElementById('scan-frequency').value,
+          sender_name:    document.getElementById('sender-name').value.trim() || 'Accounts Receivable',
+          pay_link:       document.getElementById('pay-link').value.trim()
+        })
+        msg.className = 'status-msg ok'
+        msg.textContent = 'Saved.'
+      } catch (err) {
+        msg.className = 'status-msg error'
+        msg.textContent = 'Error saving.'
+      } finally {
+        btn.disabled = false
+        setTimeout(() => { msg.textContent = ''; msg.className = 'status-msg' }, 2500)
+      }
+    })
+
+    // ── Re-auth helpers ──────────────────────────────────────────
+    async function runReauth(id, fn) {
+      const btn = document.getElementById(`reauth-${id}`)
+      const statusEl = document.getElementById(`reauth-${id}-status`)
+      btn.disabled = true
+      btn.textContent = '…'
+      statusEl.className = 'reauth-status'
+      statusEl.textContent = ''
+
+      try {
+        const result = await fn()
+        if (result && result.ok) {
+          statusEl.className = 'reauth-status ok'
+          statusEl.textContent = '[ OK ]'
+        } else {
+          statusEl.className = 'reauth-status error'
+          statusEl.textContent = result?.error ? result.error.slice(0, 28) : 'Failed'
+        }
+      } catch (err) {
+        statusEl.className = 'reauth-status error'
+        statusEl.textContent = 'Error'
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Reconnect'
+      }
+    }
+
+    document.getElementById('reauth-gmail').addEventListener('click', () =>
+      runReauth('gmail', () => api.settings.reauthGmail()))
+
+    document.getElementById('reauth-outlook').addEventListener('click', () =>
+      runReauth('outlook', () => api.settings.reauthOutlook()))
+
+    document.getElementById('reauth-quickbooks').addEventListener('click', () =>
+      runReauth('quickbooks', () => api.settings.reauthQuickBooks()))
+
+    document.getElementById('reauth-xero').addEventListener('click', () =>
+      runReauth('xero', () => api.settings.reauthXero()))
+
+    document.getElementById('reauth-hubspot').addEventListener('click', () =>
+      runReauth('hubspot', () => api.settings.reauthHubSpot()))
+
+    loadSettings()
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <!-- Collet tray icon  minimal geometric mark -->
+  <!-- Replace with .png versions: tray-icon.png (16x16) and tray-icon@2x.png (32x32) -->
+  <!-- Dark mode variant: white strokes; Light mode variant: dark strokes -->
+  <rect x="2" y="2" width="12" height="12" stroke="white" stroke-width="1"/>
+  <rect x="5" y="5" width="6" height="6" stroke="white" stroke-width="0.5"/>
+  <line x1="8" y1="2" x2="8" y2="5" stroke="#C8402A" stroke-width="1"/>
+</svg>

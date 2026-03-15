@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Collet — Activity Log</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0C0C0C; --surface: #111111; --surface-2: #1A1A1A;
+      --border: #242424; --text-primary: #F0EDE6; --text-secondary: #888580;
+      --text-muted: #4A4744; --accent: #C8402A; --green: #1D7A45;
+    }
+    body { background: var(--bg); color: var(--text-primary); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+    .wordmark { font-size: 12px; letter-spacing: 0.15em; }
+    .title { font-size: 10px; color: var(--text-muted); }
+    .stats-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid var(--border); }
+    .stat { padding: 12px 24px; border-right: 1px solid var(--border); }
+    .stat:last-child { border-right: none; }
+    .stat-value { font-size: 20px; color: var(--text-primary); margin-bottom: 4px; }
+    .stat-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+    .log-table { width: 100%; border-collapse: collapse; }
+    .log-table th { font-size: 9px; color: var(--text-muted); text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); letter-spacing: 0.08em; text-transform: uppercase; }
+    .log-table td { font-size: 11px; padding: 10px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+    .log-table tr:hover td { background: var(--surface-2); }
+    .badge { font-size: 9px; padding: 2px 6px; border: 1px solid; display: inline-block; }
+    .badge-sent { color: var(--green); border-color: var(--green); }
+    .badge-failed { color: var(--accent); border-color: var(--accent); }
+    .badge-skipped { color: var(--text-muted); border-color: var(--border); }
+    .empty { text-align: center; padding: 48px; color: var(--text-muted); font-size: 11px; }
+    .scroll { overflow-y: auto; max-height: calc(100vh - 120px); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="wordmark">COLLET</span>
+    <span class="title">ACTIVITY LOG</span>
+  </div>
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Invoices tracked</div></div>
+    <div class="stat"><div class="stat-value" id="stat-open">—</div><div class="stat-label">Open invoices</div></div>
+    <div class="stat"><div class="stat-value" id="stat-active">—</div><div class="stat-label">Active sequences</div></div>
+  </div>
+  <div class="scroll">
+    <table class="log-table" id="log-table">
+      <thead>
+        <tr>
+          <th>TIME</th>
+          <th>INVOICE</th>
+          <th>CLIENT</th>
+          <th>STAGE</th>
+          <th>TO</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="log-body">
+        <tr><td colspan="6" class="empty">Loading log entries…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    async function loadLog() {
+      const { logs, stats } = await window.collet.log.getEntries(200)
+      document.getElementById('stat-total').textContent = stats.total
+      document.getElementById('stat-open').textContent = stats.open
+      document.getElementById('stat-active').textContent = stats.active
+      const tbody = document.getElementById('log-body')
+      if (!logs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">No activity yet. Collet will log emails here after the first scan.</td></tr>'
+        return
+      }
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td>${new Date(log.sent_at).toLocaleString()}</td>
+          <td>#${log.invoice_id}</td>
+          <td>${log.client_name || '—'}</td>
+          <td style="color: var(--accent); text-transform: uppercase; font-size: 10px;">${log.stage}</td>
+          <td>${log.email_to}</td>
+          <td><span class="badge badge-${log.status}">${log.status.toUpperCase()}</span></td>
+        </tr>
+      `).join('')
+    }
+    loadLog()
+    setInterval(loadLog, 30000)
+  </script>
+</body>
+</html>

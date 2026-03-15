@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collet — Setup</title>
+  <link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+  <div class="setup-root">
+    <div class="setup-header">
+      <span class="wordmark">COLLET</span>
+      <span class="step-indicator" id="step-indicator">STEP 1 / 5</span>
+    </div>
+
+    <!-- STEP 1: LICENSE -->
+    <div class="step active" id="step-1">
+      <div class="step-label">01 — LICENSE</div>
+      <h2 class="step-headline">Enter your license key.</h2>
+      <p class="step-body">Validated against Paddle on entry. No subscription required for your first 3 days.</p>
+      <div class="field-group">
+        <label class="field-label">LICENSE KEY</label>
+        <input
+          type="text"
+          id="license-input"
+          class="field-input mono"
+          placeholder="COLLET-XXXX-XXXX-XXXX-XXXX"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <div class="field-error" id="license-error"></div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-primary" id="validate-license-btn">VALIDATE KEY →</button>
+      </div>
+      <div class="step-footer">
+        <a href="https://collet.app/pricing" class="link-muted" id="get-trial-link">Get a free trial key →</a>
+      </div>
+    </div>
+
+    <!-- STEP 2: EMAIL -->
+    <div class="step" id="step-2">
+      <div class="step-label">02 — EMAIL</div>
+      <h2 class="step-headline">Connect your email.</h2>
+      <p class="step-body">Collet uses your own SMTP to send follow-ups. Nothing routes through our servers.</p>
+      <div class="provider-grid">
+        <button class="provider-card" id="connect-gmail" data-provider="gmail">
+          <div class="provider-icon">G</div>
+          <div class="provider-info">
+            <div class="provider-name">Gmail</div>
+            <div class="provider-desc mono">Google OAuth 2.0</div>
+          </div>
+          <div class="provider-status" id="gmail-status">—</div>
+        </button>
+        <button class="provider-card" id="connect-outlook" data-provider="outlook">
+          <div class="provider-icon">M</div>
+          <div class="provider-info">
+            <div class="provider-name">Outlook</div>
+            <div class="provider-desc mono">Microsoft OAuth 2.0</div>
+          </div>
+          <div class="provider-status" id="outlook-status">—</div>
+        </button>
+      </div>
+      <div class="field-error" id="email-error"></div>
+      <div class="step-actions">
+        <button class="btn-secondary" id="back-1">← BACK</button>
+        <button class="btn-primary" id="next-2" disabled>NEXT →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: ACCOUNTING -->
+    <div class="step" id="step-3">
+      <div class="step-label">03 — ACCOUNTING</div>
+      <h2 class="step-headline">Connect your accounting system.</h2>
+      <p class="step-body">Collet reads invoices, due dates, amounts, and client emails. Read-only access.</p>
+      <div class="provider-grid">
+        <button class="provider-card" id="connect-quickbooks" data-provider="quickbooks">
+          <div class="provider-icon">QB</div>
+          <div class="provider-info">
+            <div class="provider-name">QuickBooks Online</div>
+            <div class="provider-desc mono">Intuit OAuth 2.0</div>
+          </div>
+          <div class="provider-status" id="quickbooks-status">—</div>
+        </button>
+        <button class="provider-card" id="connect-xero" data-provider="xero">
+          <div class="provider-icon">X</div>
+          <div class="provider-info">
+            <div class="provider-name">Xero</div>
+            <div class="provider-desc mono">Xero OAuth 2.0</div>
+          </div>
+          <div class="provider-status" id="xero-status">—</div>
+        </button>
+      </div>
+      <div class="field-error" id="accounting-error"></div>
+      <div class="step-actions">
+        <button class="btn-secondary" id="back-2">← BACK</button>
+        <button class="btn-primary" id="next-3" disabled>NEXT →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: CRM -->
+    <div class="step" id="step-4">
+      <div class="step-label">04 — CRM <span class="plan-badge mono">PRO + SCALE</span></div>
+      <h2 class="step-headline">Connect HubSpot.</h2>
+      <p class="step-body">Collet reads contact names, company info, and relationship data to personalize follow-ups.</p>
+      <div class="provider-grid single">
+        <button class="provider-card" id="connect-hubspot" data-provider="hubspot">
+          <div class="provider-icon">HS</div>
+          <div class="provider-info">
+            <div class="provider-name">HubSpot CRM</div>
+            <div class="provider-desc mono">HubSpot OAuth 2.0</div>
+          </div>
+          <div class="provider-status" id="hubspot-status">—</div>
+        </button>
+      </div>
+      <p class="step-footnote mono">Skip this step if you are on Starter or Growth plan.</p>
+      <div class="field-error" id="crm-error"></div>
+      <div class="step-actions">
+        <button class="btn-secondary" id="back-3">← BACK</button>
+        <button class="btn-ghost" id="skip-4">SKIP THIS STEP</button>
+        <button class="btn-primary" id="next-4">NEXT →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: CONFIRM -->
+    <div class="step" id="step-5">
+      <div class="step-label">05 — CONFIRM</div>
+      <h2 class="step-headline">Review and activate.</h2>
+      <p class="step-body">Collet will run in your system tray. No windows. No noise.</p>
+
+      <div class="connections-summary" id="connections-summary">
+        <div class="connection-row" id="summary-license">
+          <span class="connection-label mono">LICENSE</span>
+          <span class="connection-value mono" id="summary-license-val">—</span>
+        </div>
+        <div class="connection-row" id="summary-email">
+          <span class="connection-label mono">EMAIL</span>
+          <span class="connection-value mono" id="summary-email-val">—</span>
+        </div>
+        <div class="connection-row" id="summary-accounting">
+          <span class="connection-label mono">ACCOUNTING</span>
+          <span class="connection-value mono" id="summary-accounting-val">—</span>
+        </div>
+        <div class="connection-row" id="summary-crm">
+          <span class="connection-label mono">CRM</span>
+          <span class="connection-value mono" id="summary-crm-val">NOT CONNECTED</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">SCAN FREQUENCY</label>
+        <select class="field-input mono" id="scan-frequency">
+          <option value="0 * * * *">Every hour (default)</option>
+          <option value="0 */2 * * *">Every 2 hours</option>
+          <option value="0 */4 * * *">Every 4 hours</option>
+          <option value="0 */6 * * *">Every 6 hours</option>
+          <option value="0 9,17 * * 1-5">9am + 5pm on weekdays</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">SENDER NAME</label>
+        <input
+          type="text"
+          id="sender-name-input"
+          class="field-input"
+          placeholder="Accounts Receivable"
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">PAYMENT LINK (optional)</label>
+        <input
+          type="url"
+          id="pay-link-input"
+          class="field-input mono"
+          placeholder="https://pay.yourcompany.com"
+        />
+      </div>
+
+      <div class="field-error" id="activate-error"></div>
+      <div class="step-actions">
+        <button class="btn-secondary" id="back-4">← BACK</button>
+        <button class="btn-primary activate" id="activate-btn">ACTIVATE COLLET →</button>
+      </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-message mono" id="loading-message">Validating…</div>
+    </div>
+  </div>
+
+  <script src="setup.js"></script>
+</body>
+</html>
